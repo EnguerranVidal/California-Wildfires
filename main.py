@@ -112,6 +112,7 @@ def test_csv(show="", days_average=10):
     beginning = dt.datetime(2020, 8, 1, 0)
     averages = []
     counts = []
+    print("Start of loop")
     for i in range(n_snaps):
         start_time = beginning + dt.timedelta(days=days_average * i)
         end_time = beginning + dt.timedelta(days=days_average * (i + 1))
@@ -124,34 +125,31 @@ def test_csv(show="", days_average=10):
         average, count = average_grid(brightness, longitude, latitude, long, lat)
         averages.append(np.nansum(average))
         counts.append(np.nansum(count))
+        ax = plt.axes(projection=ccrs.PlateCarree())
+        ax.set_extent(extent)
+        ax.coastlines(color='white')
+        ax.add_feature(cfeature.STATES, zorder=1, linewidth=1.5, edgecolor='white')
+        ax.text(-124, 31, f'DAY {i}', transform=ccrs.Geodetic(), color='white', size='large')
         if show == "average":
-            ax = plt.axes(projection=ccrs.PlateCarree())
-            ax.set_extent(extent)
-            ax.coastlines(color='white')
-            ax.add_feature(cfeature.STATES, zorder=1, linewidth=1.5, edgecolor='white')
             ax.imshow(average, transform=ccrs.PlateCarree(), extent=extent, cmap='inferno')
-            ax.text(-124, 31, f'DAY {i}', transform=ccrs.Geodetic(), color='white', size='large')
             # creating the image
-            filename = f'Jour_{i}.png'
+            filename = f'Day_{i}.png'
             filenames.append(filename)
             plt.savefig(filename, dpi=150)
             plt.close()
 
         if show == "count":
-            ax = plt.axes(projection=ccrs.PlateCarree())
-            ax.set_extent(extent)
-            ax.coastlines(color='white')
-            ax.add_feature(cfeature.STATES, zorder=1, linewidth=1.5, edgecolor='white')
             ax.imshow(count, transform=ccrs.PlateCarree(), extent=extent, cmap='inferno')
-            ax.text(-120, 35, f'DAY {i}', transform=ccrs.Geodetic(), color='white', size='large')
-
             # creating the image
-            filename = f'Jour_{i}.png'
+            filename = f'Day_{i}.png'
             filenames.append(filename)
             plt.savefig(filename, dpi=150)
             plt.close()
+        
+    print("End of loop")
+    print("Creating GIF")
     # creating the GIF
-    with imageio.get_writer(f'Feu.gif', mode='I', fps=8) as writer:
+    with imageio.get_writer(f'Fire.gif', mode='I', fps=8) as writer:
         for filename in filenames:
             image = imageio.imread(filename)
             writer.append_data(image)
@@ -159,7 +157,7 @@ def test_csv(show="", days_average=10):
     # Delete all old images
     for filename in set(filenames):
         os.remove(filename)
-
+    print("End")
     times = np.arange(n_snaps)
     fig, axes = plt.subplots(1, 2)
     axes[0].plot(times, averages)
