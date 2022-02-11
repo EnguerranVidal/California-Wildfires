@@ -109,22 +109,19 @@ def test_csv(show="", days_average=10):
     df = pd.read_csv("fire_archive_M-C61_245017.csv")
     df["acq_date"] = pd.to_datetime(df["acq_date"], format=date_format)
     n_snaps = int(92 / days_average)
-    print(len(df))
     beginning = dt.datetime(2020, 8, 1, 0)
     averages = []
     counts = []
     for i in range(n_snaps):
         start_time = beginning + dt.timedelta(days=days_average * i)
         end_time = beginning + dt.timedelta(days=days_average * (i + 1))
-        print(start_time, end_time)
         mask = (df["acq_date"] >= start_time) & (df["acq_date"] <= end_time) & (
-                    df["confidence"] > 80)  # & (df["daynight"] == "N")
+                df["confidence"] > 80)  # & (df["daynight"] == "N")
         data = df.loc[mask]
         latitude = np.array(data["latitude"])
         longitude = np.array(data["longitude"])
         brightness = np.array(data["brightness"])
         average, count = average_grid(brightness, longitude, latitude, long, lat)
-        print(len(brightness), np.nanmean(average), np.nansum(count))
         averages.append(np.nansum(average))
         counts.append(np.nansum(count))
         if show == "average":
@@ -133,9 +130,9 @@ def test_csv(show="", days_average=10):
             ax.coastlines(color='white')
             ax.add_feature(cfeature.STATES, zorder=1, linewidth=1.5, edgecolor='white')
             ax.imshow(average, transform=ccrs.PlateCarree(), extent=extent, cmap='inferno')
-
+            ax.text(-124, 31, f'DAY {i}', transform=ccrs.Geodetic(), color='white', size='large')
             # creating the image
-            filename = f'Image_{i}.png'
+            filename = f'Jour_{i}.png'
             filenames.append(filename)
             plt.savefig(filename, dpi=150)
             plt.close()
@@ -146,14 +143,15 @@ def test_csv(show="", days_average=10):
             ax.coastlines(color='white')
             ax.add_feature(cfeature.STATES, zorder=1, linewidth=1.5, edgecolor='white')
             ax.imshow(count, transform=ccrs.PlateCarree(), extent=extent, cmap='inferno')
+            ax.text(-120, 35, f'DAY {i}', transform=ccrs.Geodetic(), color='white', size='large')
 
             # creating the image
-            filename = f'Image_{i}.png'
+            filename = f'Jour_{i}.png'
             filenames.append(filename)
             plt.savefig(filename, dpi=150)
             plt.close()
     # creating the GIF
-    with imageio.get_writer(f'FIre.gif', mode='I', fps=8) as writer:
+    with imageio.get_writer(f'Feu.gif', mode='I', fps=8) as writer:
         for filename in filenames:
             image = imageio.imread(filename)
             writer.append_data(image)
@@ -166,9 +164,15 @@ def test_csv(show="", days_average=10):
     fig, axes = plt.subplots(1, 2)
     axes[0].plot(times, averages)
     axes[1].plot(times, counts)
+    axes[0].set_xlabel("Time")
+    axes[0].set_ylabel("Average fire")
+    axes[1].set_xlabel("Time")
+    axes[1].set_ylabel("Fire rate")
+    axes[1].axvline(x=averages.index(max(averages)), color='red', linestyle='--')
+    plt.tight_layout()
     plt.show()
 
 
 if __name__ == '__main__':
-    test_csv(show="average", days_average=10)
+    test_csv(show="average", days_average=1)
     # test_h5_loader()
