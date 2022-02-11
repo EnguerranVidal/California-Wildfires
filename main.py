@@ -13,9 +13,8 @@ import csv
 
 #hysplit
 
-def test_h5_loader():
+def test_h5_loader(show="", days_average=10):
     n_level_pressure = 2
-    days_average = 10
     extent = [-125, -115, 30, 45]
     size = [41, 61]
     long = np.linspace(extent[0], extent[1], size[0])
@@ -58,6 +57,21 @@ def test_h5_loader():
                 latitudes += val_lat.tolist()
                 values += val_data.tolist()
         average, count = average_grid(values, longitudes, latitudes, long, lat)
+        if show == "average":
+            ax = plt.axes(projection=ccrs.PlateCarree())
+            ax.set_extent(extent)
+            ax.coastlines(color='white')
+            ax.add_feature(cfeature.STATES, zorder=1, linewidth=1.5, edgecolor='white')
+            ax.imshow(average, transform=ccrs.PlateCarree(), extent=extent, cmap='inferno')
+            plt.show()
+        if show == "count":
+            ax = plt.axes(projection=ccrs.PlateCarree())
+            ax.set_extent(extent)
+            ax.coastlines(color='white')
+            ax.add_feature(cfeature.STATES, zorder=1, linewidth=1.5, edgecolor='white')
+            ax.imshow(count, transform=ccrs.PlateCarree(), extent=extent, cmap='inferno')
+            plt.show()
+
         ax = plt.axes(projection=ccrs.PlateCarree())
         ax.set_extent(extent)
         ax.coastlines(color='white')
@@ -80,14 +94,15 @@ def average_grid(val_data, val_long, val_lat, long, lat):
     valid = count != 0
     average[valid] = average[valid] / count[valid]
     test = np.where(count == 0)
-    average[test] = np.nan
-    return average, count
+    # average[test] = np.nan
+    return np.flip(average, axis=0), np.flip(count, axis=0)
 
 
-def test_csv():
-    days_average = 10
-    extent = [-125, -115, 30, 45]
-    size = [61, 91]
+def test_csv(show="", days_average=10):
+    """show = average : shows fire average map for each time duration
+       show = count : shows fire counts map for each time duration"""
+    extent = [-125, -110, 30, 45]
+    size = [181, 181]
     long = np.linspace(extent[0], extent[1], size[0])
     lat = np.linspace(extent[2], extent[3], size[1])
     date_format = "%Y-%m-%d"
@@ -102,7 +117,7 @@ def test_csv():
         start_time = beginning + dt.timedelta(days=days_average * i)
         end_time = beginning + dt.timedelta(days=days_average * (i + 1))
         print(start_time, end_time)
-        mask = (df["acq_date"] > start_time) & (df["acq_date"] < end_time) & (df["confidence"] == 100)
+        mask = (df["acq_date"] >= start_time) & (df["acq_date"] <= end_time) & (df["confidence"] > 80) #& (df["daynight"] == "N")
         data = df.loc[mask]
         latitude = np.array(data["latitude"])
         longitude = np.array(data["longitude"])
@@ -111,12 +126,20 @@ def test_csv():
         print(len(brightness), np.nanmean(average), np.nansum(count))
         averages.append(np.nansum(average))
         counts.append(np.nansum(count))
-        ax = plt.axes(projection=ccrs.PlateCarree())
-        ax.set_extent(extent)
-        ax.coastlines(color='white')
-        ax.add_feature(cfeature.STATES, zorder=1, linewidth=1.5, edgecolor='white')
-        ax.imshow(count, transform=ccrs.PlateCarree(), extent=extent, cmap='inferno')
-        plt.show()
+        if show == "average":
+            ax = plt.axes(projection=ccrs.PlateCarree())
+            ax.set_extent(extent)
+            ax.coastlines(color='white')
+            ax.add_feature(cfeature.STATES, zorder=1, linewidth=1.5, edgecolor='white')
+            ax.imshow(average, transform=ccrs.PlateCarree(), extent=extent, cmap='inferno')
+            plt.show()
+        if show == "count":
+            ax = plt.axes(projection=ccrs.PlateCarree())
+            ax.set_extent(extent)
+            ax.coastlines(color='white')
+            ax.add_feature(cfeature.STATES, zorder=1, linewidth=1.5, edgecolor='white')
+            ax.imshow(count, transform=ccrs.PlateCarree(), extent=extent, cmap='inferno')
+            plt.show()
     times = np.arange(n_snaps)
     fig, axes = plt.subplots(1, 2)
     axes[0].plot(times, averages)
@@ -125,5 +148,5 @@ def test_csv():
 
 
 if __name__ == '__main__':
-    test_csv()
-    test_h5_loader()
+    test_csv(show="count", days_average=10)
+    # test_h5_loader()
