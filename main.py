@@ -5,19 +5,21 @@ import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import os
 
-import geopandas as gpd
-from shapely.geometry import Point, Polygon
-import shapely
+import datetime as dt
 import pandas as pd
+import geopandas as gpd
+import csv
 
-from collections import namedtuple
 
+#hysplit
 
-def test_loader():
-    n_level_pressure = 1
+def test_h5_loader():
+    n_level_pressure = 2
     days_average = 10
     extent = [-125, -115, 30, 45]
     size = [41, 61]
+    long = np.linspace(extent[0], extent[1], size[0])
+    lat = np.linspace(extent[2], extent[3], size[1])
     DATAFIELD_NAME = '/HDFEOS/SWATHS/MOP02/Data Fields/RetrievedCOMixingRatioProfile'
     GEO_DATA = '/HDFEOS/SWATHS/MOP02/Geolocation Fields'
     data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
@@ -55,8 +57,6 @@ def test_loader():
                 longitudes += val_lon.tolist()
                 latitudes += val_lat.tolist()
                 values += val_data.tolist()
-        long = np.linspace(extent[0], extent[1], size[0])
-        lat = np.linspace(extent[2], extent[3], size[1])
         average, count = average_grid(values, longitudes, latitudes, long, lat)
         ax = plt.axes(projection=ccrs.PlateCarree())
         ax.set_extent(extent)
@@ -84,5 +84,46 @@ def average_grid(val_data, val_long, val_lat, long, lat):
     return average, count
 
 
+def test_csv():
+    days_average = 10
+    extent = [-125, -115, 30, 45]
+    size = [61, 91]
+    long = np.linspace(extent[0], extent[1], size[0])
+    lat = np.linspace(extent[2], extent[3], size[1])
+    date_format = "%Y-%m-%d"
+    df = pd.read_csv("fire_archive_M-C61_245017.csv")
+    df["acq_date"] = pd.to_datetime(df["acq_date"], format=date_format)
+    n_snaps = int(92 / days_average)
+    print(len(df))
+    beginning = dt.datetime(2020, 8, 1, 0)
+    averages = []
+    counts = []
+    for i in range(n_snaps):
+        start_time = beginning + dt.timedelta(days=days_average * i)
+        end_time = beginning + dt.timedelta(days=days_average * (i + 1))
+        print(start_time, end_time)
+        mask = (df["acq_date"] > start_time) & (df["acq_date"] < end_time) & (df["confidence"] == 100)
+        data = df.loc[mask]
+        latitude = np.array(data["latitude"])
+        longitude = np.array(data["longitude"])
+        brightness = np.array(data["brightness"])
+        average, count = average_grid(brightness, longitude, latitude, long, lat)
+        print(len(brightness), np.nanmean(average), np.nansum(count))
+        averages.append(np.nansum(average))
+        counts.append(np.nansum(count))
+        ax = plt.axes(projection=ccrs.PlateCarree())
+        ax.set_extent(extent)
+        ax.coastlines(color='white')
+        ax.add_feature(cfeature.STATES, zorder=1, linewidth=1.5, edgecolor='white')
+        ax.imshow(count, transform=ccrs.PlateCarree(), extent=extent, cmap='inferno')
+        plt.show()
+    times = np.arange(n_snaps)
+    fig, axes = plt.subplots(1, 2)
+    axes[0].plot(times, averages)
+    axes[1].plot(times, counts)
+    plt.show()
+
+
 if __name__ == '__main__':
-    test_loader()
+    test_csv()
+    test_h5_loader()
