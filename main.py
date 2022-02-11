@@ -7,11 +7,10 @@ import os
 
 import datetime as dt
 import pandas as pd
+import imageio
 import geopandas as gpd
 import csv
 
-
-#hysplit
 
 def test_h5_loader(show="", days_average=10):
     n_level_pressure = 2
@@ -101,6 +100,7 @@ def average_grid(val_data, val_long, val_lat, long, lat):
 def test_csv(show="", days_average=10):
     """show = average : shows fire average map for each time duration
        show = count : shows fire counts map for each time duration"""
+    filenames = []
     extent = [-125, -110, 30, 45]
     size = [181, 181]
     long = np.linspace(extent[0], extent[1], size[0])
@@ -117,7 +117,8 @@ def test_csv(show="", days_average=10):
         start_time = beginning + dt.timedelta(days=days_average * i)
         end_time = beginning + dt.timedelta(days=days_average * (i + 1))
         print(start_time, end_time)
-        mask = (df["acq_date"] >= start_time) & (df["acq_date"] <= end_time) & (df["confidence"] > 80) #& (df["daynight"] == "N")
+        mask = (df["acq_date"] >= start_time) & (df["acq_date"] <= end_time) & (
+                    df["confidence"] > 80)  # & (df["daynight"] == "N")
         data = df.loc[mask]
         latitude = np.array(data["latitude"])
         longitude = np.array(data["longitude"])
@@ -139,7 +140,22 @@ def test_csv(show="", days_average=10):
             ax.coastlines(color='white')
             ax.add_feature(cfeature.STATES, zorder=1, linewidth=1.5, edgecolor='white')
             ax.imshow(count, transform=ccrs.PlateCarree(), extent=extent, cmap='inferno')
-            plt.show()
+
+            # creating the image
+            filename = f'Jour_{i}.png'
+            filenames.append(filename)
+            plt.savefig(filename, dpi=150)
+            plt.close()
+    # creating the GIF
+    with imageio.get_writer(f'Feu.gif', mode='I', fps=8) as writer:
+        for filename in filenames:
+            image = imageio.imread(filename)
+            writer.append_data(image)
+    writer.close()
+    # Delete all old images
+    for filename in set(filenames):
+        os.remove(filename)
+
     times = np.arange(n_snaps)
     fig, axes = plt.subplots(1, 2)
     axes[0].plot(times, averages)
@@ -150,3 +166,4 @@ def test_csv(show="", days_average=10):
 if __name__ == '__main__':
     test_csv(show="count", days_average=10)
     # test_h5_loader()
+
