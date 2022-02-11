@@ -3,4 +3,4 @@
  
 This project is based on the data of the MOPITT instrument on NASA's TERRA satellite that measures CO levels at different altitudes. We will also use the MODIS instrument on that same satellite to collerate monoxyde presence with fire anomalies to detect active wild fires from August to October 2020.
 
-Contributors : CHIAPELLA Théau, SOTO-AGUILAR Javier
+Contributors : [Théau Ch](https://github.com/TheauCh), [Javier S-A](https://github.com/JavierS-A), [EnguerranVidal](https://github.com/EnguerranVidal)
