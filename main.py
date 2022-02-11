@@ -133,7 +133,13 @@ def test_csv(show="", days_average=10):
             ax.coastlines(color='white')
             ax.add_feature(cfeature.STATES, zorder=1, linewidth=1.5, edgecolor='white')
             ax.imshow(average, transform=ccrs.PlateCarree(), extent=extent, cmap='inferno')
-            plt.show()
+
+            # creating the image
+            filename = f'Image_{i}.png'
+            filenames.append(filename)
+            plt.savefig(filename, dpi=150)
+            plt.close()
+
         if show == "count":
             ax = plt.axes(projection=ccrs.PlateCarree())
             ax.set_extent(extent)
@@ -142,12 +148,12 @@ def test_csv(show="", days_average=10):
             ax.imshow(count, transform=ccrs.PlateCarree(), extent=extent, cmap='inferno')
 
             # creating the image
-            filename = f'Jour_{i}.png'
+            filename = f'Image_{i}.png'
             filenames.append(filename)
             plt.savefig(filename, dpi=150)
             plt.close()
     # creating the GIF
-    with imageio.get_writer(f'Feu.gif', mode='I', fps=8) as writer:
+    with imageio.get_writer(f'FIre.gif', mode='I', fps=8) as writer:
         for filename in filenames:
             image = imageio.imread(filename)
             writer.append_data(image)
@@ -164,6 +170,5 @@ def test_csv(show="", days_average=10):
 
 
 if __name__ == '__main__':
-    test_csv(show="count", days_average=10)
+    test_csv(show="average", days_average=10)
     # test_h5_loader()
-
