@@ -56,20 +56,15 @@ def test_h5_loader(show="", days_average=10):
                 latitudes += val_lat.tolist()
                 values += val_data.tolist()
         average, count = average_grid(values, longitudes, latitudes, long, lat)
+        ax = plt.axes(projection=ccrs.PlateCarree())
+        ax.set_extent(extent)
+        ax.coastlines(color='white')
+        ax.add_feature(cfeature.STATES, zorder=1, linewidth=1.5, edgecolor='white')
         if show == "average":
-            ax = plt.axes(projection=ccrs.PlateCarree())
-            ax.set_extent(extent)
-            ax.coastlines(color='white')
-            ax.add_feature(cfeature.STATES, zorder=1, linewidth=1.5, edgecolor='white')
             ax.imshow(average, transform=ccrs.PlateCarree(), extent=extent, cmap='inferno')
-            plt.show()
         if show == "count":
-            ax = plt.axes(projection=ccrs.PlateCarree())
-            ax.set_extent(extent)
-            ax.coastlines(color='white')
-            ax.add_feature(cfeature.STATES, zorder=1, linewidth=1.5, edgecolor='white')
             ax.imshow(count, transform=ccrs.PlateCarree(), extent=extent, cmap='inferno')
-            plt.show()
+        plt.show()
 
         ax = plt.axes(projection=ccrs.PlateCarree())
         ax.set_extent(extent)
@@ -97,7 +92,7 @@ def average_grid(val_data, val_long, val_lat, long, lat):
     return np.flip(average, axis=0), np.flip(count, axis=0)
 
 
-def test_csv(show="", days_average=10):
+def test_csv(show="", days_average=10, file=""):
     """show = average : shows fire average map for each time duration
        show = count : shows fire counts map for each time duration"""
     filenames = []
@@ -106,13 +101,14 @@ def test_csv(show="", days_average=10):
     long = np.linspace(extent[0], extent[1], size[0])
     lat = np.linspace(extent[2], extent[3], size[1])
     date_format = "%Y-%m-%d"
-    df = pd.read_csv("fire_archive_M-C61_245017.csv")
+    df = pd.read_csv(file)
     df["acq_date"] = pd.to_datetime(df["acq_date"], format=date_format)
     n_snaps = int(92 / days_average)
-    beginning = dt.datetime(2020, 8, 1, 0)
+    beginning = df["acq_date"].iloc[0]
     averages = []
     counts = []
     print("Start of loop")
+    print(df["acq_date"].iloc[0])
     for i in range(n_snaps):
         start_time = beginning + dt.timedelta(days=days_average * i)
         end_time = beginning + dt.timedelta(days=days_average * (i + 1))
@@ -129,27 +125,25 @@ def test_csv(show="", days_average=10):
         ax.set_extent(extent)
         ax.coastlines(color='white')
         ax.add_feature(cfeature.STATES, zorder=1, linewidth=1.5, edgecolor='white')
-        ax.text(-124, 31, f'DAY {i}', transform=ccrs.Geodetic(), color='white', size='large')
+        ax.text(-124, 31, f'{start_time}', transform=ccrs.Geodetic(), color='white', size='medium')
+        ax.scatter(-118.5, 34, transform=ccrs.PlateCarree(), color='red', s=5)
+        ax.text(-118.3, 33.9, 'L - A', transform=ccrs.Geodetic(), color='white', size='small')
         if show == "average":
             ax.imshow(average, transform=ccrs.PlateCarree(), extent=extent, cmap='inferno')
-            # creating the image
-            filename = f'Day_{i}.png'
-            filenames.append(filename)
-            plt.savefig(filename, dpi=150)
-            plt.close()
 
         if show == "count":
             ax.imshow(count, transform=ccrs.PlateCarree(), extent=extent, cmap='inferno')
-            # creating the image
-            filename = f'Day_{i}.png'
-            filenames.append(filename)
-            plt.savefig(filename, dpi=150)
-            plt.close()
-        
+
+        # creating the image
+        filename = f'Day_{i}.png'
+        filenames.append(filename)
+        plt.savefig(filename, dpi=150)
+        plt.close()
+        print(f'{i * 100 / n_snaps:.2f} %')
     print("End of loop")
     print("Creating GIF")
     # creating the GIF
-    with imageio.get_writer(f'Fire.gif', mode='I', fps=8) as writer:
+    with imageio.get_writer(f'Fire.gif', mode='I', fps=12) as writer:
         for filename in filenames:
             image = imageio.imread(filename)
             writer.append_data(image)
@@ -172,5 +166,5 @@ def test_csv(show="", days_average=10):
 
 
 if __name__ == '__main__':
-    test_csv(show="average", days_average=1)
+    test_csv(show="count", days_average=1, file="fire_archive_M-C61_250962.csv")
     # test_h5_loader()
