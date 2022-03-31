@@ -154,6 +154,21 @@ def plot_fire_levels():
     plt.show()
 
 
+def extent_map():
+    import matplotlib.patches as mpatches
+    extent = [-140, -70, 15, 60]
+    ax = plt.axes(projection=ccrs.PlateCarree())
+    ax.set_extent(extent)
+    ax.coastlines(color="black")
+    ax.stock_img()
+    ax.add_patch(mpatches.Rectangle(xy=(-125, 30), width=10, height=15, lw=3,
+                                    edgecolor='blue', transform=ccrs.PlateCarree()))
+    ax.add_patch(mpatches.Rectangle(xy=(-125, 30), width=10, height=15, facecolor="blue", alpha=0.05,
+                                    transform=ccrs.PlateCarree()))
+    ax.add_feature(cfeature.STATES, zorder=1, linewidth=0.5, edgecolor="black")
+    plt.show()
+
+
 def plot_CO_levels():
     average = 1
     MOPPIT_data_directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
@@ -173,6 +188,18 @@ def plot_CO_levels():
     ax.axvline(x=counts_list.index(max(counts_list)), color='red', linestyle='--')
     plt.tight_layout()
     plt.show()
+
+
+def all_fires():
+    average = 92
+    MODIS_filename = "fire_archive_M-C61_245017.csv"
+    extent = [-125, -115, 30, 45]
+    size = [201, 401]
+    averages_fires, counts_fires, times_fires = csv_MODIS_loader(MODIS_filename, extent, size, averaging=average)
+    counts = counts_fires[0]
+    ones = counts > 1
+    counts[ones] = 1
+    simple_plot_map(counts, extent, borderlines="white")
 
 
 def confront_CO_fire():
@@ -241,12 +268,41 @@ def plot_weeks():
     plt.show()
 
 
+def scattered_data():
+    averaging = 1
+    n_pressure = 2
+    MOPPIT_data_directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+    DATAFIELD_NAME = '/HDFEOS/SWATHS/MOP02/Data Fields/RetrievedCOMixingRatioProfile'
+    GEO_DATA = '/HDFEOS/SWATHS/MOP02/Geolocation Fields'
+    files = [f for f in os.listdir(MOPPIT_data_directory) if os.path.isfile(os.path.join(MOPPIT_data_directory, f))]
+    n_snaps = int(len(files) / averaging)
+    for i in range(n_snaps):
+        values, longitudes, latitudes = [], [], []
+        for j in range(averaging):
+            index = i * averaging + j
+            path = os.path.join(MOPPIT_data_directory, files[index])
+            with h5py.File(path, mode='r') as file:
+                # Extract Datasets
+                data_var = file[DATAFIELD_NAME]
+                data_lat = file[GEO_DATA + '/Latitude']
+                data_lon = file[GEO_DATA + '/Longitude']
+                # Read Values
+                val_lat = data_lat[:]
+                val_lon = data_lon[:]
+                val_data = data_var[:, n_pressure, 0]
+                longitudes += val_lon.tolist()
+                latitudes += val_lat.tolist()
+                values += val_data.tolist()
+
+
+
 if __name__ == '__main__':
     # plot_fire_levels()
     # plot_CO_levels()
-    confront_CO_fire()
+    # confront_CO_fire()
     # create_fires_gif_map()
     # simple_plot_map(averages_fires[0], extent)
     # simple_plot_map(averages_CO[0], extent)
     # plot_weeks()
-    pass
+    all_fires()
+    # extent_map()
