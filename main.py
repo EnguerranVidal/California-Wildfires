@@ -185,7 +185,7 @@ def plot_CO_levels():
     times = np.arange(n)
     fig, ax = plt.subplots(1, 1)
     ax.plot(times, counts_list)
-    ax.set_xlabel("Times")
+    ax.set_xlabel("Time in Days")
     ax.set_ylabel("Average CO Levels")
     ax.axvline(x=counts_list.index(max(counts_list)), color='red', linestyle='--')
     plt.tight_layout()
@@ -225,7 +225,7 @@ def confront_CO_fire():
     fig, ax = plt.subplots(1, 1)
     ax.plot(times, np.array(CO_list) / max(CO_list), label="CO Levels")
     ax.plot(times, np.array(Fires_list) / max(Fires_list), label="Fire Surface in Pixels")
-    ax.set_xlabel("Times")
+    ax.set_xlabel("Time in days")
     # ax.axvline(x=Fires_list.index(max(Fires_list)), color='red', linestyle='--')
     plt.tight_layout()
     plt.legend()
@@ -280,6 +280,7 @@ def scattered_data():
     GEO_DATA = '/HDFEOS/SWATHS/MOP02/Geolocation Fields'
     files = [f for f in os.listdir(MOPPIT_data_directory) if os.path.isfile(os.path.join(MOPPIT_data_directory, f))]
     n_snaps = int(len(files) / averaging)
+    values, longitudes, latitudes = [], [], []
     for i in range(n_snaps):
         values, longitudes, latitudes = [], [], []
         for j in range(averaging):
@@ -297,12 +298,26 @@ def scattered_data():
                 longitudes += val_lon.tolist()
                 latitudes += val_lat.tolist()
                 values += val_data.tolist()
-
+        borderlines = "black"
+        ax = plt.axes(projection=ccrs.PlateCarree())
+        ax.set_extent(extent)
+        ax.coastlines(color=borderlines)
+        ax.add_feature(cfeature.STATES, zorder=1, linewidth=1.5, edgecolor=borderlines)
+        plt.scatter(x=longitudes, y=latitudes, transform=ccrs.PlateCarree())
+        plt.show()
 
 
 if __name__ == '__main__':
-    plot_fire_levels()
-    # plot_CO_levels()
+    average = 91
+    MODIS_filename = "fire_archive_M-C61_245017.csv"
+    MOPPIT_data_directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+    extent = [-125, -115, 30, 45]
+    size = [101, 201]
+    P = 2
+    # averages_CO, counts_CO = h5_MOPITT_loader(MOPPIT_data_directory, extent, size, averaging=average, n_pressure=P)
+    # averages_fires, counts_fires, times_fires = csv_MODIS_loader(MODIS_filename, extent, size, averaging=average)
+    # plot_fire_levels()
+    plot_CO_levels()
     # confront_CO_fire()
     # create_fires_gif_map()
     # simple_plot_map(averages_fires[0], extent)
@@ -310,3 +325,4 @@ if __name__ == '__main__':
     # plot_weeks()
     # all_fires()
     # extent_map()
+    # scattered_data()
