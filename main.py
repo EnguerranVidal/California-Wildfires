@@ -143,12 +143,14 @@ def plot_fire_levels():
     counts_list = []
     n = len(counts)
     for i in range(n):
+        ones = counts[i] > 0
+        counts[i][ones] = 1
         counts_list.append(np.nansum(counts[i]))
     times = np.arange(n)
     fig, ax = plt.subplots(1, 1)
     ax.plot(times, counts_list)
     ax.set_xlabel("Times")
-    ax.set_ylabel("Number of Fire Pixels")
+    ax.set_ylabel("Fire Surface in Pixels")
     ax.axvline(x=counts_list.index(max(counts_list)), color='red', linestyle='--')
     plt.tight_layout()
     plt.show()
@@ -215,12 +217,14 @@ def confront_CO_fire():
     Fires_list = []
     n = len(counts_CO)
     for i in range(n):
+        ones = counts_fires[i] > 0
+        counts_fires[i][ones] = 1
         CO_list.append(np.nansum(averages_CO[i]) / np.nansum(counts_CO[i]))
         Fires_list.append(np.nansum(counts_fires[i]))
     times = np.arange(n)
     fig, ax = plt.subplots(1, 1)
     ax.plot(times, np.array(CO_list) / max(CO_list), label="CO Levels")
-    ax.plot(times, np.array(Fires_list) / max(Fires_list), label="Fires' Numbers")
+    ax.plot(times, np.array(Fires_list) / max(Fires_list), label="Fire Surface in Pixels")
     ax.set_xlabel("Times")
     # ax.axvline(x=Fires_list.index(max(Fires_list)), color='red', linestyle='--')
     plt.tight_layout()
@@ -297,12 +301,12 @@ def scattered_data():
 
 
 if __name__ == '__main__':
-    # plot_fire_levels()
+    plot_fire_levels()
     # plot_CO_levels()
     # confront_CO_fire()
     # create_fires_gif_map()
     # simple_plot_map(averages_fires[0], extent)
     # simple_plot_map(averages_CO[0], extent)
     # plot_weeks()
-    all_fires()
+    # all_fires()
     # extent_map()
